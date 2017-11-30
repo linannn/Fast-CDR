@@ -27,7 +27,7 @@ namespace eprosima
              * @brief This class is thrown as an exception when a invalid parameter was being serialized.
              * @ingroup EXCEPTIONMODULE
              */
-            class BadParamException : public Exception
+            class BadParamException : public Exception      //集成Exception类
             {
                 public:
 

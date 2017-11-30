@@ -56,7 +56,7 @@ namespace eprosima
                 //! @brief This enumeration represents the two posible values of the flag that points if the content is a parameter list (only in DDS CDR).
                 typedef enum
 #ifdef HAVE_CXX0X
-                    : uint8_t
+                    : uint8_t       
 #endif
                     {
                         //! @brief Specifies that the content is not a parameter list.
