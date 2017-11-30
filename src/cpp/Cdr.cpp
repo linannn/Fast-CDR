@@ -502,7 +502,8 @@ Cdr& Cdr::serialize(const double double_t)
     throw NotEnoughMemoryException(NotEnoughMemoryException::NOT_ENOUGH_MEMORY_MESSAGE_DEFAULT);
 }
 //  linann note start
-// alignment函数？？？？？？？
+// alignment函数的对齐机制是什么？
+
 // @brief 该函数用于序列化有不同字节顺序的double型变量
 // @param double_t 将在缓冲区中序列化的double变量的值
 // @param endianness 在此double型变量序列化过程中所用的字节顺序
@@ -512,19 +513,19 @@ Cdr& Cdr::serialize(const double double_t, Endianness endianness)
 {   
     //临时变量,用于记录m_swapBytes
     bool auxSwap = m_swapBytes;
-    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节
+    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节，即确定m_swapBytes的值
     m_swapBytes = (m_swapBytes && (m_endianness == endianness)) || (!m_swapBytes && (m_endianness != endianness));
 
     try
     {
-        //调用serialize(double double_t)函数
+        //调用序列化函数
         serialize(double_t);
         //还原m_swapBytes
         m_swapBytes = auxSwap;
     }
     catch(Exception &ex)
     {
-        //抛出异常同时还原m_swapBytes
+        //如果序列化失败，抛出异常同时还原m_swapBytes
         m_swapBytes = auxSwap;
         ex.raise();
     }
@@ -532,7 +533,7 @@ Cdr& Cdr::serialize(const double double_t, Endianness endianness)
     return *this;
 }
 
-// @brief 该函数用于在机器的默认字节顺序下序列化一个long double变量
+// @brief 该函数用于在默认字节顺序下序列化一个long double变量
 // @param ldouble_t 将在缓冲区中序列化的ldouble变量的值
 // @return 一个eprosima::fastcdr::Cdr对象的引用
 // @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
@@ -546,7 +547,7 @@ Cdr& Cdr::serialize(const long double ldouble_t)
     //判断当前缓冲区大小是否大于序列化所需空间，或者是否可以申请到相应大小的内存
     if(((m_lastPosition - m_currentPosition) >= sizeAligned) || resize(sizeAligned))
     {
-        //存储最新的数据大小i
+        //存储最新的数据大小
         // Save last datasize.
         m_lastDataSize = sizeof(ldouble_t);
 
@@ -561,7 +562,7 @@ Cdr& Cdr::serialize(const long double ldouble_t)
             //通过将该变量取地址后把该地址强制转换成一个char型制指针实现
             const char *dst = reinterpret_cast<const char*>(&ldouble_t);
 
-            //按从后向前的顺序将long double型数据的每个字节写入缓冲区并同时改变m_currentPosition的位置
+            //按从后向前的顺序将long double型数据的每个字节写入缓冲区并同时更新m_currentPosition的位置
             m_currentPosition++ << dst[15];
             m_currentPosition++ << dst[14];
             m_currentPosition++ << dst[13];
@@ -603,19 +604,19 @@ Cdr& Cdr::serialize(const long double ldouble_t, Endianness endianness)
 {
     //临时变量，用于记录m_swapBytes
     bool auxSwap = m_swapBytes;
-    //根据参数endianness以及机器的字节顺序确定最终的字节顺序
+    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节，即确定m_swapBytes的值
     m_swapBytes = (m_swapBytes && (m_endianness == endianness)) || (!m_swapBytes && (m_endianness != endianness));
 
     try
     {
-        //调用serialize(long double ldouble_t)函数
+        //调用已有的序列化函数
         serialize(ldouble_t);
         //还原m_swapBytes
         m_swapBytes = auxSwap;
     }
     catch(Exception &ex)
     {
-        //抛出异常同时还原m_swapBytes
+        //如果序列化失败，抛出异常同时还原m_swapBytes
         m_swapBytes = auxSwap;
         ex.raise();
     }
@@ -623,8 +624,8 @@ Cdr& Cdr::serialize(const long double ldouble_t, Endianness endianness)
     return *this;
 }
 
-// @brief 该函数用于在机器的默认字节顺序下序列化一个long double变量
-// @param ldouble_t 将在缓冲区中序列化的ldouble变量的值
+// @brief 该函数用于在默认字节顺序下序列化一个bool变量
+// @param bool_t 将在缓冲区中序列化的bool变量的值
 // @return 一个eprosima::fastcdr::Cdr对象的引用
 // @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serialize(const bool bool_t)
@@ -652,13 +653,13 @@ Cdr& Cdr::serialize(const bool bool_t)
     throw NotEnoughMemoryException(NotEnoughMemoryException::NOT_ENOUGH_MEMORY_MESSAGE_DEFAULT);
 }
 
-// @brief 该函数用于在机器的默认字节顺序下序列化一个字符串 即String
+// @brief 该函数用于在默认字节顺序下序列化一个字符串 即String
 // @param string_t是一个指向将被序列化的字符串的指针
 // @return 一个eprosima::fastcdr::Cdr对象的引用
 // @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serialize(const char *string_t)
 {
-    //unsigned int型临时变量，用于存储字符串长度
+    //临时变量，表示字符串长度
     uint32_t length = 0;
 
     //获取字符串的长度
@@ -710,12 +711,12 @@ Cdr& Cdr::serialize(const char *string_t, Endianness endianness)
 
     //临时变量，用于记录m_swapBytes
     bool auxSwap = m_swapBytes;
-    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节
+    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节，即确定m_swapBytes的值
     m_swapBytes = (m_swapBytes && (m_endianness == endianness)) || (!m_swapBytes && (m_endianness != endianness));
 
     try
     {
-        //调用serialize(char *string_t)
+        //调用已有的序列化函数
         serialize(string_t);
         //还原m_swapBytes
         m_swapBytes = auxSwap;
@@ -737,10 +738,10 @@ Cdr& Cdr::serialize(const char *string_t, Endianness endianness)
 // @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const bool *bool_t, size_t numElements)
 {
-    //该bool数组的总大小
+    //该bool数组的占的空间
     size_t totalSize = sizeof(*bool_t)*numElements;
 
-  //判断当前缓冲区大小是否大于序列化所需空间，或者是否可以申请到相应大小的内存
+    //判断当前缓冲区大小是否大于序列化所需空间，或者是否可以申请到相应大小的内存
     if(((m_lastPosition - m_currentPosition) >= totalSize) || resize(totalSize))
     {
         //保存最新的数据大小，注意是bool型的大小而不是数组大小
@@ -771,10 +772,10 @@ Cdr& Cdr::serializeArray(const bool *bool_t, size_t numElements)
 // @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const char *char_t, size_t numElements)
 {
-    //该字符数组的总大小
+    //该字符数组所占的总空间
     size_t totalSize = sizeof(*char_t)*numElements;
 
-  //判断当前缓冲区大小是否大于序列化所需空间，或者是否可以申请到相应大小的内存
+    //判断当前缓冲区大小是否大于序列化所需空间，或者是否可以申请到相应大小的内存
     if(((m_lastPosition - m_currentPosition) >= totalSize) || resize(totalSize))
     {
         //保存最新的数据大小，即char型
@@ -798,25 +799,35 @@ Cdr& Cdr::serializeArray(const char *char_t, size_t numElements)
 // @return 一个eprosima::fastcdr::Cdr对象的引用
 // @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const int16_t *short_t, size_t numElements)
-{
+{   
+    //需要对齐的字节数
     size_t align = alignment(sizeof(*short_t));
+    //该short数组的字节总数
     size_t totalSize = sizeof(*short_t) * numElements;
+    //序列化该数据类型所需的空间大小，包括对齐和数组本身的大小
     size_t sizeAligned = totalSize + align;
 
+    //判断当前缓冲区大小是否大于序列化所需空间，或者是否可以申请到相应大小的内存
     if(((m_lastPosition - m_currentPosition) >= sizeAligned) || resize(sizeAligned))
     {
+        //储存最新的数据大小
         // Save last datasize.
         m_lastDataSize = sizeof(*short_t);
 
+        //如果有元素则对齐数据
         // Align if there are any elements
         if(numElements)
             makeAlign(align);
 
         if(m_swapBytes)
         {
+            //如果需要交换字节顺序，将short型数组转换为char型数组再序列化
+            //dst为转换后的char指针
             const char *dst = reinterpret_cast<const char*>(&short_t);
+            //end为short数组结束的位置
             const char *end = dst + totalSize;
 
+            //遍历short数组的每一个元素，对于每一个short元素，从后向前把每一个字节写入缓冲区，并更新m_currentPosition的值
             for(; dst < end; dst += sizeof(*short_t))
             {
                 m_currentPosition++ << dst[1];
@@ -825,28 +836,42 @@ Cdr& Cdr::serializeArray(const int16_t *short_t, size_t numElements)
         }
         else
         {
+            //如果不需要交换字节，直接将数组写入缓冲区
             m_currentPosition.memcopy(short_t, totalSize);
+            //同时更新m_currentPosition的值，向后偏移short数组大小
             m_currentPosition += totalSize;
         }
 
         return *this;
     }
 
+    //抛出异常
     throw NotEnoughMemoryException(NotEnoughMemoryException::NOT_ENOUGH_MEMORY_MESSAGE_DEFAULT);
 }
 
+// @brief 该函数用于序列化有不同字节顺序short数组
+// @param short_t 将要序列化的short数组
+// @param numElements short数组元素的数量
+// @param endianness 序列化过程中所用的字节顺序
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const int16_t *short_t, size_t numElements, Endianness endianness)
 {
+    //临时变量，用于记录m_swapBytes
     bool auxSwap = m_swapBytes;
+    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节，即确定m_swapBytes的值
     m_swapBytes = (m_swapBytes && (m_endianness == endianness)) || (!m_swapBytes && (m_endianness != endianness));
 
     try
     {
+        //调用已有的序列化函数
         serializeArray(short_t, numElements);
+        //还原m_swapBytes
         m_swapBytes = auxSwap;
     }
     catch(Exception &ex)
     {
+        //如果序列化失败则抛出异常并还原m_swapBytes
         m_swapBytes = auxSwap;
         ex.raise();
     }
@@ -854,26 +879,41 @@ Cdr& Cdr::serializeArray(const int16_t *short_t, size_t numElements, Endianness 
     return *this;
 }
 
+// @brief 该函数序列化一个int型数组(数组元素为4字节)
+// @param long_t 将要序列化的int数组
+// @param numElements int数组元素的数量
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const int32_t *long_t, size_t numElements)
 {
+    //需要对齐的字节数(仅与数组元素有关)
     size_t align = alignment(sizeof(*long_t));
+    //int数组的字节总数
     size_t totalSize = sizeof(*long_t) * numElements;
+    //序列化改数据所需要的空间大小，包括对齐和数据本身大小
     size_t sizeAligned = totalSize + align;
 
+    //判断当前缓冲区大小是否大于序列化所需空间，或者是否可以申请到相应大小的内存
     if(((m_lastPosition - m_currentPosition) >= sizeAligned) || resize(sizeAligned))
     {
+        //存储最新数据的大小(仅仅是数组元素的大小，而不是数组本身大小)
         // Save last datasize.
         m_lastDataSize = sizeof(*long_t);
 
+        //如果有元素则对齐数据
         // Align if there are any elements
         if(numElements)
             makeAlign(align);
 
         if(m_swapBytes)
         {
+            //如果需要交换字节顺序，把int型数组转换为char型数组在序列化
+            //dst为int数组转换后的char指针
             const char *dst = reinterpret_cast<const char*>(&long_t);
+            //end为int数组结束的位置
             const char *end = dst + totalSize;
 
+            //遍历int数组的元素，int的每一个字节从后向前写入缓冲区，同时更新m_currentPosition的值
             for(; dst < end; dst += sizeof(*long_t))
             {
                 m_currentPosition++ << dst[3];
@@ -884,28 +924,42 @@ Cdr& Cdr::serializeArray(const int32_t *long_t, size_t numElements)
         }
         else
         {
+            //如果不需要交换字节，直接把数组写入缓冲区
             m_currentPosition.memcopy(long_t, totalSize);
+            //同时更新m_currentPosition的值，向后偏移数组大小
             m_currentPosition += totalSize;
         }
 
         return *this;
     }
 
+    //如果没有申请到足够内存 抛出异常
     throw NotEnoughMemoryException(NotEnoughMemoryException::NOT_ENOUGH_MEMORY_MESSAGE_DEFAULT);
 }
 
+// @brief 该函数在给出不同字节顺序的情况下序列化一个int型数组(数组元素为4字节)
+// @param long_t 将要序列化的int数组
+// @param numElements int数组元素的数量
+// @param endianness 序列化过程中所用的字节顺序
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const int32_t *long_t, size_t numElements, Endianness endianness)
 {
+    //临时变量，用于记录m_swapBytes
     bool auxSwap = m_swapBytes;
+    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节，即确定m_swapBytes的值
     m_swapBytes = (m_swapBytes && (m_endianness == endianness)) || (!m_swapBytes && (m_endianness != endianness));
 
     try
-    {
+    {   
+        //调用序列化函数
         serializeArray(long_t, numElements);
+        //还原m_swapBytes
         m_swapBytes = auxSwap;
     }
     catch(Exception &ex)
     {
+        //如果序列化失败则抛出异常并还原m_swapBytes
         m_swapBytes = auxSwap;
         ex.raise();
     }
@@ -913,25 +967,42 @@ Cdr& Cdr::serializeArray(const int32_t *long_t, size_t numElements, Endianness e
     return *this;
 }
 
+// @brief 该函数序列化一个wchar_t数组(双字节类型)
+// @param wchar 将要序列化的w_char数组
+// @param numElements 数组元素的数量
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const wchar_t *wchar, size_t numElements)
 {
+    //遍历wchar_t数组，调用序列化函数，分别序列化数组元素
     for(size_t count = 0; count < numElements; ++count)
         serialize(wchar[count]);
     return *this;
 }
 
+// @brief 该函数序列化一个wchar_t数组(双字节类型)
+// @param wchar 将要序列化的w_char数组
+// @param numElements 数组元素的数量
+// @param endianness 序列化过程中所用的字节顺序
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const wchar_t *wchar, size_t numElements, Endianness endianness)
 {
+    //临时变量，用于记录m_swapBytes
     bool auxSwap = m_swapBytes;
+    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节，即确定m_swapBytes的值
     m_swapBytes = (m_swapBytes && (m_endianness == endianness)) || (!m_swapBytes && (m_endianness != endianness));
 
     try
     {
+        //根据最终确定的字节顺序调用序列化函数
         serializeArray(wchar, numElements);
+        //还原m_swapBytes
         m_swapBytes = auxSwap;
     }
     catch(Exception &ex)
     {
+        //如果序列化失败则抛出异常并还原m_swapBytes
         m_swapBytes = auxSwap;
         ex.raise();
     }
@@ -939,26 +1010,41 @@ Cdr& Cdr::serializeArray(const wchar_t *wchar, size_t numElements, Endianness en
     return *this;
 }
 
+// @brief 该函数序列化一个longlong数组
+// @param longlong_t 将要序列化的longlong数组
+// @param numElements 数组元素的数量
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const int64_t *longlong_t, size_t numElements)
 {
+    //需要对齐的字节数(仅与数组元素类型有关)
     size_t align = alignment(sizeof(*longlong_t));
+    //数组总字节数
     size_t totalSize = sizeof(*longlong_t) * numElements;
+    //序列化数据所需空间大小
     size_t sizeAligned = totalSize + align;
 
+    //判断当前缓冲区大小是否大于序列化所需空间，或者是否可以申请到相应大小的内存
     if(((m_lastPosition - m_currentPosition) >= sizeAligned) || resize(sizeAligned))
     {
+        //存储最新数据的大小(数组元素)
         // Save last datasize.
         m_lastDataSize = sizeof(*longlong_t);
 
+        //如果数组由元素则对齐数据
         // Align if there are any elements
         if(numElements)
             makeAlign(align);
 
         if(m_swapBytes)
         {
+            //如果需要交换字节，把longlong数组转换为char数组在交换字节后序列化
+            //dst为数组转换后的char指针
             const char *dst = reinterpret_cast<const char*>(&longlong_t);
+            //end为数组最后一个元素的位置
             const char *end = dst + totalSize;
 
+            //遍历数组元素，把longlong变量的每一个字节从后向前写入缓冲区，并同时更新m_currentPosition的值
             for(; dst < end; dst += sizeof(*longlong_t))
             {
                 m_currentPosition++ << dst[7];
@@ -973,6 +1059,7 @@ Cdr& Cdr::serializeArray(const int64_t *longlong_t, size_t numElements)
         }
         else
         {
+            //如果不需要交换字节，直接把数组写入缓冲区，同时更新m_currentPosition的值
             m_currentPosition.memcopy(longlong_t, totalSize);
             m_currentPosition += totalSize;
         }
@@ -980,21 +1067,34 @@ Cdr& Cdr::serializeArray(const int64_t *longlong_t, size_t numElements)
         return *this;
     }
 
+    //如果没有申请到足够内存，抛出异常
     throw NotEnoughMemoryException(NotEnoughMemoryException::NOT_ENOUGH_MEMORY_MESSAGE_DEFAULT);
 }
 
+
+// @brief 该函数在给出不同字节顺序的情况下序列化一个longlong型数组
+// @param longlong_t 将要序列化的longlong数组
+// @param numElements 数组元素的数量
+// @param endianness 序列化过程中所用的字节顺序
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const int64_t *longlong_t, size_t numElements, Endianness endianness)
 {
+    //临时变量，用于记录m_swapBytes
     bool auxSwap = m_swapBytes;
+    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节，即确定m_swapBytes的值
     m_swapBytes = (m_swapBytes && (m_endianness == endianness)) || (!m_swapBytes && (m_endianness != endianness));
 
     try
     {
+        //调用序列化函数
         serializeArray(longlong_t, numElements);
+        //还原m_swapBytes
         m_swapBytes = auxSwap;
     }
     catch(Exception &ex)
     {
+        //如果序列化失败则抛出异常并还原m_swapBytes
         m_swapBytes = auxSwap;
         ex.raise();
     }
@@ -1002,26 +1102,41 @@ Cdr& Cdr::serializeArray(const int64_t *longlong_t, size_t numElements, Endianne
     return *this;
 }
 
+// @brief 该函数序列化一个float数组
+// @param float_t 将要序列化的float数组
+// @param numElements 数组元素的数量
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const float *float_t, size_t numElements)
 {
+    //需要对齐的字节数(仅与数组元素类型有关)
     size_t align = alignment(sizeof(*float_t));
+    //数组总字节数
     size_t totalSize = sizeof(*float_t) * numElements;
+    //序列化数据所需空间大小
     size_t sizeAligned = totalSize + align;
 
+    //判断当前缓冲区大小是否大于序列化所需空间，或者是否可以申请到相应大小的内存
     if(((m_lastPosition - m_currentPosition) >= sizeAligned) || resize(sizeAligned))
     {
+        //存储最新数据的大小(数组元素)
         // Save last datasize.
         m_lastDataSize = sizeof(*float_t);
 
+        //如果数组有元素则对齐数据
         // Align if there are any elements
         if(numElements)
             makeAlign(align);
 
         if(m_swapBytes)
         {
+            //如果需要交换字节，把float数组转换为char数组再交换字节后序列化
+            //dst为数组转换后的char指针
             const char *dst = reinterpret_cast<const char*>(&float_t);
+            //end为数组最后一个元素的位置
             const char *end = dst + totalSize;
 
+            //遍历数组元素，把float的每一个字节从后向前写入缓冲区，并同时更新m_currentPosition的值
             for(; dst < end; dst += sizeof(*float_t))
             {
                 m_currentPosition++ << dst[3];
@@ -1032,6 +1147,7 @@ Cdr& Cdr::serializeArray(const float *float_t, size_t numElements)
         }
         else
         {
+            //如果不需要交换字节，直接把数组写入缓冲区，同时更新m_currentPosition的值
             m_currentPosition.memcopy(float_t, totalSize);
             m_currentPosition += totalSize;
         }
@@ -1039,21 +1155,32 @@ Cdr& Cdr::serializeArray(const float *float_t, size_t numElements)
         return *this;
     }
 
+    //如果没有申请到足够内存，抛出异常
     throw NotEnoughMemoryException(NotEnoughMemoryException::NOT_ENOUGH_MEMORY_MESSAGE_DEFAULT);
 }
 
+// @brief 该函数在给出不同字节顺序的情况下序列化一个float型数组
+// @param float_t 将要序列化的float数组
+// @param numElements 数组元素的数量
+// @param endianness 序列化过程中所用的字节顺序
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const float *float_t, size_t numElements, Endianness endianness)
 {
+    //临时变量，用于记录m_swapBytes
     bool auxSwap = m_swapBytes;
+    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节，即确定m_swapBytes的值
     m_swapBytes = (m_swapBytes && (m_endianness == endianness)) || (!m_swapBytes && (m_endianness != endianness));
 
     try
     {
+        //调用序列化函数，序列化成功后还原m_swapBytes
         serializeArray(float_t, numElements);
         m_swapBytes = auxSwap;
     }
     catch(Exception &ex)
     {
+        //如果序列化失败则抛出异常并还原m_swapBytes
         m_swapBytes = auxSwap;
         ex.raise();
     }
@@ -1061,26 +1188,41 @@ Cdr& Cdr::serializeArray(const float *float_t, size_t numElements, Endianness en
     return *this;
 }
 
+// @brief 该函数序列化一个double数组
+// @param double_t 将要序列化的double数组
+// @param numElements 数组元素的数量
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const double *double_t, size_t numElements)
 {
+    //需要对齐的字节数(仅与数组元素类型有关)
     size_t align = alignment(sizeof(*double_t));
+    //数组总字节数
     size_t totalSize = sizeof(*double_t) * numElements;
+    //序列化数据所需空间大小
     size_t sizeAligned = totalSize + align;
 
+    //判断当前缓冲区大小是否大于序列化所需空间，或者是否可以申请到相应大小的内存
     if(((m_lastPosition - m_currentPosition) >= sizeAligned) || resize(sizeAligned))
     {
+        //存储最新数据的大小(数组元素)
         // Save last datasize.
         m_lastDataSize = sizeof(*double_t);
 
+        //如果数组有元素则对齐数据
         // Align if there are any elements
         if(numElements)
             makeAlign(align);
 
         if(m_swapBytes)
         {
+            //如果需要交换字节，把double数组转换为char数组，交换字节后序列化
+            //dst为数组转换后的char指针
             const char *dst = reinterpret_cast<const char*>(&double_t);
+            //end为数组最后一个元素的位置
             const char *end = dst + totalSize;
 
+            //遍历double_t的元素，把double变量的每一个字节从后向前写入缓冲区，并同时更新m_currentPosition的值
             for(; dst < end; dst += sizeof(*double_t))
             {
                 m_currentPosition++ << dst[7];
@@ -1095,6 +1237,7 @@ Cdr& Cdr::serializeArray(const double *double_t, size_t numElements)
         }
         else
         {
+            //如果不需要交换字节，直接把数组写入缓冲区，同时更新m_currentPosition的值
             m_currentPosition.memcopy(double_t, totalSize);
             m_currentPosition += totalSize;
         }
@@ -1102,28 +1245,40 @@ Cdr& Cdr::serializeArray(const double *double_t, size_t numElements)
         return *this;
     }
 
+    //如果没有申请到足够内存，抛出异常
     throw NotEnoughMemoryException(NotEnoughMemoryException::NOT_ENOUGH_MEMORY_MESSAGE_DEFAULT);
 }
 
+// @brief 该函数在给出不同字节顺序的情况下序列化一个double型数组
+// @param double_t 将要序列化的double数组
+// @param numElements 数组元素的数量
+// @param endianness 序列化过程中所用的字节顺序
+// @return 一个eprosima::fastcdr::Cdr对象的引用
+// @exception exception:: NotEnoughMemoryException尝试序列化超过内部存储器大小的位置时引发此异常。
 Cdr& Cdr::serializeArray(const double *double_t, size_t numElements, Endianness endianness)
 {
+    //临时变量，用于记录m_swapBytes
     bool auxSwap = m_swapBytes;
+    //根据参数endianness以及机器字节存储顺序确定是否需要交换字节，即确定m_swapBytes的值
     m_swapBytes = (m_swapBytes && (m_endianness == endianness)) || (!m_swapBytes && (m_endianness != endianness));
 
     try
     {
+        //调用序列化函数，序列化成功后还原m_swapBytes
         serializeArray(double_t, numElements);
         m_swapBytes = auxSwap;
     }
     catch(Exception &ex)
     {
+        //如果序列化失败则抛出异常并还原m_swapBytes
         m_swapBytes = auxSwap;
         ex.raise();
     }
 
     return *this;
 }
-// linann end  
+// linann end
+  
 Cdr& Cdr::serializeArray(const long double *ldouble_t, size_t numElements)
 {
     size_t align = alignment(ALIGNMENT_LONG_DOUBLE);
